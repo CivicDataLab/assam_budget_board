@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+#chart svg {
+  height: 1000px;
+  width: 4000px;
+    
+ 
+}
+.nv-x .tick text {
+    transform: rotate(-90deg) translateX(-350px) translateY(-7px);
+}
+.nvd3 .nv-axis.nv-x path.domain {
+  stroke-opacity: 1;
+  stroke: black;
+}
+.nvd3 .nv-axis.nv-y path.domain {
+  stroke-opacity: 1;
+  stroke: black;
+}
+
+</style>
+
+<body>
+        <div id="chart">
+                <svg></svg>
+              </div>
+              
+              <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.2/d3.min.js"></script>
+              <script src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.min.js"></script> 
+    <script type="text/javascript">
+        var grant_data = []
+d3.csv("assam_exp_2018_19.csv", function(error, csv_data) {
+ var data = d3.nest()
+  .key(function(d) { return d.GRANT_NUMBER;})
+    .rollup(function(d) { 
+   return {
+     BUDGET_2017_18 : d3.sum(d, function(g) {return g.BUDGET_2017_18; }),
+     BUDGET_2018_19 : d3.sum(d, function(g) {return g.BUDGET_2018_19; }),
+   }
+  }).entries(csv_data);
+     grant_data = data.map(function(d)
+  {  //console.log(d.key)
+     //console.log(Object.values(d).slice(1)[0].BUDGET_2017_18)
+     return{
+     id : d.key,
+     percent_change : ((Object.values(d).slice(1)[0].BUDGET_2018_19 - Object.values(d).slice(1)[0].BUDGET_2017_18)/Object.values(d).slice(1)[0].BUDGET_2017_18)*100
+  
+     }
+  });
+      
+     console.log(grant_data)
+
+      grant_data.sort(function(a, b) { return a.percent_change - b.percent_change;});
+
+
+    var exampleData =[ {
+          "key": 'Grant',
+          "values" : []
+      }
+      ];
+
+      grant_data.forEach(function (d){
+          d.value = +d.value
+          exampleData[0].values.push(d)
+      })
+
+      console.log(exampleData)
+
+ nv.addGraph(function() {
+    var chart = nv.models.discreteBarChart()
+    .x(function(d) { return d.id })
+    .y(function(d) { return d.percent_change })
+    .staggerLabels(true)
+   
+    .margin({top: 30, right: 20, bottom: 500, left: 175})
+    .showValues(true)
+
+  d3.select('#chart svg')
+    .datum(exampleData)
+    .transition().duration(350)
+    
+    .call(chart);
+
+  d3.select('#chart svg')
+  .append("text")
+  .attr("x", 2000)             
+  .attr("y", 20)
+  .style("font-weight", "bold")
+  .style('font-size', '20px')
+  .attr("text-anchor", "middle")  
+  .text("Percentage difference between BE 2017 an BE 2018");
+
+  
+chart.color(function(d) {
+  if (yLabels[d.y] == '5 - Sales Tax & Other Tax') return 'yellow';
+  return 'green';
+});
+
+  nv.utils.windowResize(chart.update);
+
+  return chart;
+  
+});
+
+});
+    </script>
